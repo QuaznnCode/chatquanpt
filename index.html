@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT-like Chatbot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+            margin: 0;
+        }
+        .chat-container {
+            width: 90%;
+            max-width: 600px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+        .chat-header {
+            background: #007bff;
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2em;
+        }
+        #chatbox {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+        }
+        #userInputContainer {
+            display: flex;
+            padding: 10px;
+            background: #f4f4f9;
+        }
+        #userInput {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        button {
+            background: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            margin-left: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .user {
+            align-self: flex-end;
+            background: #007bff;
+            color: #fff;
+        }
+        .bot {
+            align-self: flex-start;
+            background: #e1e1e1;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">ChatGPT-like Chatbot</div>
+        <div id="chatbox"></div>
+        <div id="userInputContainer">
+            <input type="text" id="userInput" placeholder="Type your message here..." onkeypress="if(event.key === 'Enter') sendMessage()">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatbox = document.getElementById('chatbox');
+        const userInput = document.getElementById('userInput');
+
+        function sendMessage() {
+            const userText = userInput.value;
+            if (userText.trim() === '') return;
+
+            // Hiển thị tin nhắn của người dùng
+            const userMessage = document.createElement('div');
+            userMessage.className = 'message user';
+            userMessage.textContent = userText;
+            chatbox.appendChild(userMessage);
+
+            // Tạo phản hồi từ bot
+            const botMessage = document.createElement('div');
+            botMessage.className = 'message bot';
+            botMessage.textContent = getBotResponse(userText);
+            chatbox.appendChild(botMessage);
+
+            // Cuộn xuống cuối chatbox
+            chatbox.scrollTop = chatbox.scrollHeight;
+
+            // Xóa ô nhập liệu
+            userInput.value = '';
+        }
+
+        function getBotResponse(input) {
+            // Chuyển đổi input thành chữ thường để so sánh dễ dàng hơn
+            input = input.toLowerCase();
+
+            // Các phản hồi dựa trên từ khóa
+            if (input.includes('hello') || input.includes('hi')) {
+                return 'Hello! How can I help you today?';
+            } else if (input.includes('how are you')) {
+                return 'I am just a bot, but I am doing great! How about you?';
+            } else if (input.includes('what is your name')) {
+                return 'I am a basic chatbot created by a developer.';
+            } else if (input.includes('bye')) {
+                return 'Goodbye! Have a great day!';
+            } else {
+                return 'I am not sure how to respond to that. Can you ask something else?';
+            }
+        }
+    </script>
+</body>
+</html>
