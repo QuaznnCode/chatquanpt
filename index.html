@@ -1,107 +1,169 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatGPT-like Chatbot</title>
+    <title>GPTbyQuan</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
-            justify-content: center;
-            align-items: center;
             height: 100vh;
-            background: linear-gradient(135deg, #f4f4f9, #c4c4c9);
+            background: #343541;
             margin: 0;
+            color: #d1d5db;
         }
-        .chat-container {
-            width: 90%;
-            max-width: 600px;
-            background: #fff;
-            border-radius: 15px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
+        .sidebar {
+            width: 250px;
+            background: #202123;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+        .sidebar h2 {
+            color: #d1d5db;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        .chat-history-item {
+            background: #40414f;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .chat-history-item:hover {
+            background: #50515f;
+        }
+        .main-content {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            height: 80vh;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            height: 100%;
+            background: #40414f;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: auto;
         }
         .chat-header {
-            background: #007bff;
-            color: #fff;
+            background: #202123;
+            color: #d1d5db;
             padding: 20px;
             text-align: center;
             font-size: 1.5em;
-            border-bottom: 2px solid #0056b3;
+            border-bottom: 1px solid #343541;
         }
         #chatbox {
             flex: 1;
             padding: 20px;
             overflow-y: auto;
-            border-bottom: 1px solid #ddd;
             display: flex;
             flex-direction: column;
-            background: #f9f9fc;
+            background: #343541;
         }
         #userInputContainer {
             display: flex;
             padding: 15px;
-            background: #f4f4f9;
-            border-top: 2px solid #ddd;
+            background: #202123;
+            border-top: 1px solid #343541;
         }
         #userInput {
             flex: 1;
             padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
+            border: 1px solid #343541;
             font-size: 1em;
+            background: #40414f;
+            color: #d1d5db;
+            border-radius: 5px;
         }
         button {
-            background: #007bff;
+            background: #10a37f;
             color: #fff;
             border: none;
             padding: 15px 20px;
             margin-left: 10px;
-            border-radius: 10px;
             cursor: pointer;
             font-size: 1em;
             transition: background 0.3s;
+            border-radius: 5px;
         }
         button:hover {
-            background: #0056b3;
+            background: #0e8c6d;
         }
         .message {
             margin: 10px 0;
             padding: 15px;
-            border-radius: 15px;
+            border-radius: 10px;
             max-width: 80%;
             word-wrap: break-word;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         .user {
             align-self: flex-end;
-            background: #007bff;
+            background: #10a37f;
             color: #fff;
+            border-radius: 18px 18px 0 18px;
         }
         .bot {
             align-self: flex-start;
-            background: #e1e1e1;
-            color: #333;
+            background: #40414f;
+            color: #d1d5db;
+            border-radius: 18px 18px 18px 0;
+            position: relative;
+        }
+        .typing-indicator {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">ChatGPT-like Chatbot</div>
-        <div id="chatbox"></div>
-        <div id="userInputContainer">
-            <input type="text" id="userInput" placeholder="Type your message here..." onkeypress="if(event.key === 'Enter') sendMessage()">
-            <button onclick="sendMessage()">Send</button>
+    <div class="sidebar">
+        <h2>Lịch sử Chat</h2>
+        <div id="chatHistory"></div>
+    </div>
+    <div class="main-content">
+        <div class="chat-container">
+            <div class="chat-header">GPTbyQuan</div>
+            <div id="chatbox"></div>
+            <div id="userInputContainer">
+                <input type="text" id="userInput" placeholder="Nhập tin nhắn của bạn ở đây..." onkeypress="if(event.key === 'Enter') sendMessage()">
+                <button onclick="sendMessage()">Gửi</button>
+            </div>
         </div>
     </div>
 
     <script>
         const chatbox = document.getElementById('chatbox');
         const userInput = document.getElementById('userInput');
+        const chatHistoryContainer = document.getElementById('chatHistory');
+        let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+
+        // Load chat history from localStorage
+        window.onload = () => {
+            chatHistory.forEach((message, index) => {
+                const messageElement = document.createElement('div');
+                messageElement.className = `message ${message.sender}`;
+                messageElement.textContent = message.text;
+                chatbox.appendChild(messageElement);
+
+                if (message.sender === 'user') {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'chat-history-item';
+                    historyItem.textContent = message.text;
+                    historyItem.onclick = () => loadChat(index);
+                    chatHistoryContainer.appendChild(historyItem);
+                }
+            });
+            chatbox.scrollTop = chatbox.scrollHeight;
+        };
 
         function sendMessage() {
             const userText = userInput.value;
@@ -113,10 +175,23 @@
             userMessage.textContent = userText;
             chatbox.appendChild(userMessage);
 
-            // Tạo phản hồi từ bot
+            // Lưu tin nhắn vào lịch sử trò chuyện
+            chatHistory.push({ sender: 'user', text: userText });
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+
+            // Thêm vào lịch sử chat
+            const historyItem = document.createElement('div');
+            historyItem.className = 'chat-history-item';
+            historyItem.textContent = userText;
+            historyItem.onclick = () => loadChat(chatHistory.length - 1);
+            chatHistoryContainer.appendChild(historyItem);
+
+            // Tạo hiệu ứng gõ phím của bot
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'typing-indicator';
             const botMessage = document.createElement('div');
             botMessage.className = 'message bot';
-            botMessage.textContent = getBotResponse(userText);
+            botMessage.appendChild(typingIndicator);
             chatbox.appendChild(botMessage);
 
             // Cuộn xuống cuối chatbox
@@ -124,6 +199,25 @@
 
             // Xóa ô nhập liệu
             userInput.value = '';
+
+            // Tạo phản hồi từ bot sau một khoảng thời gian
+            setTimeout(() => {
+                botMessage.removeChild(typingIndicator);
+                const botResponse = getBotResponse(userText);
+                typeBotResponse(botMessage, botResponse);
+                // Lưu phản hồi của bot vào lịch sử trò chuyện
+                chatHistory.push({ sender: 'bot', text: botResponse });
+                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            }, 1000);
+        }
+
+        function typeBotResponse(element, text, index = 0) {
+            if (index < text.length) {
+                element.textContent += text.charAt(index);
+                setTimeout(() => typeBotResponse(element, text, index + 1), 50);
+            } else {
+                chatbox.scrollTop = chatbox.scrollHeight;
+            }
         }
 
         function getBotResponse(input) {
@@ -131,21 +225,56 @@
             input = input.toLowerCase();
 
             // Các phản hồi dựa trên từ khóa
-            if (input.includes('hello') || input.includes('hi')) {
-                return 'Hello! How can I help you today?';
-            } else if (input.includes('how are you')) {
-                return 'I am just a bot, but I am doing great! How about you?';
-            } else if (input.includes('what is your name')) {
-                return 'I am a basic chatbot created by a developer.';
-            } else if (input.includes('bye')) {
-                return 'Goodbye! Have a great day!';
-            } else if (input.includes('weather')) {
-                return 'I am not sure about the weather right now, but you can check a weather website for the latest updates.';
-            } else if (input.includes('time')) {
-                return `The current time is ${new Date().toLocaleTimeString()}.`;
+            if (input.includes('xin chào') || input.includes('chào')) {
+                return 'Xin chào! Tôi có thể giúp gì cho bạn hôm nay?';
+            } else if (input.includes('bạn khỏe không')) {
+                return 'Tôi chỉ là một bot, nhưng tôi đang rất tốt! Còn bạn thì sao?';
+            } else if (input.includes('tên bạn là gì')) {
+                return 'Tôi là một chatbot cơ bản được tạo bởi Nguyễn Minh Quân';
+            } else if (input.includes('tạm biệt')) {
+                return 'Tạm biệt! Chúc bạn một ngày tốt lành!';
+            } else if (input.includes('thời tiết')) {
+                return 'Tôi không chắc về thời tiết hiện tại, nhưng bạn có thể kiểm tra một trang web thời tiết để cập nhật mới nhất.';
+            } else if (input.includes('giờ')) {
+                return `Bây giờ là ${new Date().toLocaleTimeString()}.`;
+            } else if (input.includes('ngày')) {
+                return `Hôm nay là ngày ${new Date().toLocaleDateString()}.`;
+            } else if (input.includes('truyện cười')) {
+                return 'Tại sao các nhà khoa học không tin tưởng vào nguyên tử? Vì chúng tạo nên mọi thứ!';
+            } else if (input.includes('câu nói hay')) {
+                return 'Giới hạn duy nhất cho sự hiện thực hóa ngày mai của chúng ta là những nghi ngờ của chúng ta hôm nay. - Franklin D. Roosevelt';
             } else {
-                return 'I am not sure how to respond to that. Can you ask something else?';
+                return getAdvancedBotResponse(input);
             }
+        }
+
+        function getAdvancedBotResponse(input) {
+            // Các phản hồi nâng cao dựa trên từ khóa
+            if (input.includes('ai là tổng thống mỹ')) {
+                return 'Tổng thống Mỹ hiện tại là Joe Biden.';
+            } else if (input.includes('thủ đô của việt nam')) {
+                return 'Thủ đô của Việt Nam là Hà Nội.';
+            } else if (input.includes('ý nghĩa của cuộc sống')) {
+                return 'Ý nghĩa của cuộc sống là một câu hỏi triết học mà nhiều người đã cố gắng trả lời. Nó có thể khác nhau đối với mỗi người.';
+            } else if (input.includes('công thức tính diện tích hình tròn')) {
+                return 'Công thức tính diện tích hình tròn là A = πr², trong đó A là diện tích và r là bán kính của hình tròn.';
+            } else if (input.includes('ai là người phát minh ra internet')) {
+                return 'Internet được phát minh bởi nhiều người, nhưng một trong những người đóng góp chính là Tim Berners-Lee, người đã tạo ra World Wide Web.';
+            } else {
+                return 'Tôi không chắc phải trả lời thế nào. Bạn có thể hỏi điều gì khác không?';
+            }
+        }
+
+        function loadChat(index) {
+            chatbox.innerHTML = '';
+            for (let i = index; i < chatHistory.length; i++) {
+                const message = chatHistory[i];
+                const messageElement = document.createElement('div');
+                messageElement.className = `message ${message.sender}`;
+                messageElement.textContent = message.text;
+                chatbox.appendChild(messageElement);
+            }
+            chatbox.scrollTop = chatbox.scrollHeight;
         }
     </script>
 </body>
